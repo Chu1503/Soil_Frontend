@@ -1,128 +1,173 @@
-import React, { useState } from 'react';
-import './App.css';
+import React, { useState } from "react";
+import axios from "axios";
 
 const App = () => {
-  const [pHValue, setPHValue] = useState('');
-  const [ECValue, setECValue] = useState('');
-  const [NValue, setNValue] = useState('');
-  const [PValue, setPValue] = useState('');
-  const [KValue, setKValue] = useState('');
-  const [result, setResult] = useState(null);
+  const [model, setModel] = useState("");
+  const [inputValues, setInputValues] = useState({
+    pH: "",
+    EC: "",
+    Ava_N: "",
+    Ava_P: "",
+    Ava_K: "",
+  });
+  const [predictedOC, setPredictedOC] = useState(null);
 
-  const handlePHChange = (e) => {
-    setPHValue(e.target.value);
+  const handleModelChange = (event) => {
+    setModel(event.target.value);
   };
 
-  const handleECChange = (e) => {
-    setECValue(e.target.value);
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+    setInputValues((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
   };
 
-  const handleNChange = (e) => {
-    setNValue(e.target.value);
-  };
+  const handlePredictClick = async () => {
+    if (!model) {
+      alert("PLEASE CHOOSE A MODEL!");
+      return;
+    }
 
-  const handlePChange = (e) => {
-    setPValue(e.target.value);
-  };
+    const valuesFilled = Object.values(inputValues).every(
+      (value) => value.trim() !== ""
+    );
+    if (!valuesFilled) {
+      alert("PLEASE INPUT ALL VALUES");
+      return;
+    }
 
-  const handleKChange = (e) => {
-    setKValue(e.target.value);
-  };
+    console.log("Model:", model);
+    console.log("Input Values:", inputValues);
 
-  const handleButtonClick = () => {
-    // Perform your calculation using the input values
-    if (/^\d*\.?\d*$/.test(NValue)) {
-      const regressionIntercept = -0.501089335682187;
-      const pHCoefficient = -0.00008617549007226171;
-      const ECCoefficient = 0.000987666549731028;
-      const NCoefficient = 0.015357416634671987;
-      const PCoefficient = 0.00016213215575418646;
-      const KCoefficient = 0.000015734525442998026;
-
-      const calculatedResult =
-        regressionIntercept +
-        parseFloat(pHValue) * pHCoefficient +
-        parseFloat(ECValue) * ECCoefficient +
-        parseFloat(NValue) * NCoefficient +
-        parseFloat(PValue) * PCoefficient +
-        parseFloat(KValue) * KCoefficient;
-      
-      setResult(calculatedResult.toFixed(4));
-    } else {
-      setResult(null);
-      alert('Please enter a valid value for the available Nitrogen');
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8080/predict",
+        {
+          model_name: model,
+          ...inputValues,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("Response:", response.data);
+      setPredictedOC(response.data.predicted_OC);
+    } catch (error) {
+      console.error("Error predicting OC:", error);
     }
   };
 
   return (
-    <div className="container mx-auto mt-8 text-center">
-      <h1 className="text-lg font-black mb-12 text-yellow-50 sm:text-2xl">
+    <div className="flex flex-col justify-center items-center h-screen text-yellow-50 bg-[#171616]">
+      <div className="bg-[#cb8a05] text-2xl font-black py-4 px-6 fixed top-0 w-full z-10 flex justify-center items-center">
         Soil Organic Carbon Calculator
-      </h1>
-      <div className="mb-4">
-        <div className="text-yellow-50 mb-2">Enter pH Value:</div>
-        <input
-          type="text"
-          className="border rounded-md p-2"
-          placeholder="Enter a number"
-          value={pHValue}
-          onChange={handlePHChange}
-        />
       </div>
-      <div className="mb-4">
-        <div className="text-yellow-50 mb-2">Enter EC Value:</div>
-        <input
-          type="text"
-          className="border rounded-md p-2"
-          placeholder="Enter a number"
-          value={ECValue}
-          onChange={handleECChange}
-        />
-      </div>
-      <div className="mb-4">
-        <div className="text-yellow-50 mb-2">Enter N Value:</div>
-        <input
-          type="text"
-          className="border rounded-md p-2"
-          placeholder="Enter a number"
-          value={NValue}
-          onChange={handleNChange}
-        />
-      </div>
-      <div className="mb-4">
-        <div className="text-yellow-50 mb-2">Enter P Value:</div>
-        <input
-          type="text"
-          className="border rounded-md p-2"
-          placeholder="Enter a number"
-          value={PValue}
-          onChange={handlePChange}
-        />
-      </div>
-      <div className="mb-4">
-        <div className="text-yellow-50 mb-2">Enter K Value:</div>
-        <input
-          type="text"
-          className="border rounded-md p-2"
-          placeholder="Enter a number"
-          value={KValue}
-          onChange={handleKChange}
-        />
-      </div>
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-yellow-50 font-bold mt-5 py-2 px-4 rounded"
-        onClick={handleButtonClick}
-      >
-        Calculate
-      </button>
-      {result !== null && (
-        <div className="mt-4">
-          <p className="text-md text-yellow-50 sm:text-lg">
-            Predicted Organic Carbon Value:{' '}
-            <span className="font-bold text-yellow-600">{result}</span>
-          </p>
+      <div className="space-y-4">
+        <div className="flex flex-col items-center">
+          <label htmlFor="pH" className="text-md mb-2">
+            {" "}
+            Enter pH Value:
+          </label>
+          <input
+            type="text"
+            id="pH"
+            name="pH"
+            value={inputValues.pH}
+            onChange={handleInputChange}
+            className="border border-[#cb8a05] px-3 py-2 rounded-md focus:outline-none bg-[#171616] text-yellow-50"
+          />
         </div>
-      )}
+        <div className="flex flex-col items-center">
+          <label htmlFor="EC" className="text-md mb-2">
+            Enter EC Value:
+          </label>
+          <input
+            type="text"
+            id="EC"
+            name="EC"
+            value={inputValues.EC}
+            onChange={handleInputChange}
+            className="border border-[#cb8a05] px-3 py-2 rounded-md focus:outline-none bg-[#171616] text-yellow-50"
+          />
+        </div>
+        <div className="flex flex-col items-center">
+          <label htmlFor="Ava_N" className="text-md mb-2">
+            Enter Ava N Value:
+          </label>
+          <input
+            type="text"
+            id="Ava_N"
+            name="Ava_N"
+            value={inputValues.Ava_N}
+            onChange={handleInputChange}
+            className="border border-[#cb8a05] px-3 py-2 rounded-md focus:outline-none bg-[#171616] text-yellow-50"
+          />
+        </div>
+        <div className="flex flex-col items-center">
+          <label htmlFor="Ava_P" className="text-md mb-2">
+            Enter Ava P Value:
+          </label>
+          <input
+            type="text"
+            id="Ava_P"
+            name="Ava_P"
+            value={inputValues.Ava_P}
+            onChange={handleInputChange}
+            className="border border-[#cb8a05] px-3 py-2 rounded-md focus:outline-none bg-[#171616] text-yellow-50"
+          />
+        </div>
+        <div className="flex flex-col items-center">
+          <label htmlFor="Ava_K" className="text-md mb-2">
+            Enter Ava K Value:
+          </label>
+          <input
+            type="text"
+            id="Ava_K"
+            name="Ava_K"
+            value={inputValues.Ava_K}
+            onChange={handleInputChange}
+            className="border border-[#cb8a05] px-3 py-2 rounded-md focus:outline-none bg-[#171616] text-yellow-50"
+          />
+        </div>
+      </div>
+      <div className="mt-8 text-center">
+        <select
+          id="model"
+          value={model}
+          onChange={handleModelChange}
+          className="border border-[#cb8a05] px-3 py-2 rounded-md focus:outline-none bg-[#171616] text-yellow-50"
+        >
+          <option value="" hidden disabled>
+            Select A Model
+          </option>
+          <option value="LinearRegression">Linear Regression</option>
+          <option value="GradientBoostingRegressor">
+            Gradient Boosting Regressor
+          </option>
+        </select>
+      </div>
+      <div className="mt-8 text-center">
+        <button
+          onClick={handlePredictClick}
+          className="px-4 py-2 bg-[#cb8a05] text-yellow-50 rounded-md hover:bg-yellow-50 hover:text-[#171616] focus:outline-none font-bold"
+        >
+          Calculate
+        </button>
+      </div>
+      <div className="mt-4 text-lg">
+        {predictedOC !== null && (
+          <p>
+            Predicted Organic Carbon Value:{" "}
+            <span className="font-bold text-[#cb8a05]">
+              {parseFloat(predictedOC).toFixed(4)}
+            </span>
+          </p>
+        )}
+      </div>
     </div>
   );
 };
