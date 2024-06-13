@@ -11,6 +11,7 @@ const App = () => {
     Ava_K: "",
   });
   const [predictedOC, setPredictedOC] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleModelChange = (event) => {
     setModel(event.target.value);
@@ -38,16 +39,37 @@ const App = () => {
       return;
     }
 
+    setLoading(true);
+
     console.log("Model:", model);
     console.log("Input Values:", inputValues);
 
     try {
+      // Convert input values to numeric format if necessary
+      const numericInputValues = {
+        pH: parseFloat(inputValues.pH),
+        EC: parseFloat(inputValues.EC),
+        Ava_N: parseFloat(inputValues.Ava_N),
+        Ava_P: parseFloat(inputValues.Ava_P),
+        Ava_K: parseFloat(inputValues.Ava_K),
+      };
+
+      // const response = await axios.post(
+      //   `http://127.0.0.1:8080/predict_${model
+      //     .toLowerCase()
+      //     .replace(/ /g, "_")}`,
+      //   numericInputValues, // Use the converted numeric values
+      //   {
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //   }
+      // );
       const response = await axios.post(
-        "http://127.0.0.1:8080/predict",
-        {
-          model_name: model,
-          ...inputValues,
-        },
+        `https://soil-backend-ruby.vercel.app/predict_${model
+          .toLowerCase()
+          .replace(/ /g, "_")}`,
+        numericInputValues, // Use the converted numeric values
         {
           headers: {
             "Content-Type": "application/json",
@@ -58,6 +80,8 @@ const App = () => {
       setPredictedOC(response.data.predicted_OC);
     } catch (error) {
       console.error("Error predicting OC:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -144,18 +168,20 @@ const App = () => {
           <option value="" hidden disabled>
             Select A Model
           </option>
-          <option value="LinearRegression">Linear Regression</option>
+          <option value="LinearRegressor">Linear Regression</option>
           <option value="GradientBoostingRegressor">
             Gradient Boosting Regressor
           </option>
+          <option value="NeuralNetwork">Neural Network</option>
         </select>
       </div>
       <div className="mt-8 text-center">
         <button
           onClick={handlePredictClick}
           className="px-4 py-2 bg-[#cb8a05] text-yellow-50 rounded-md hover:bg-yellow-50 hover:text-[#171616] focus:outline-none font-bold"
+          disabled={loading}
         >
-          Calculate
+          {loading ? "Calculate" : "Calculate"}
         </button>
       </div>
       <div className="mt-4 text-lg">
