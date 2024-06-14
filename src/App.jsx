@@ -25,6 +25,10 @@ const App = () => {
     }));
   };
 
+  const isNumeric = (value) => {
+    return !isNaN(value) && !isNaN(parseFloat(value));
+  };
+
   const handlePredictClick = async () => {
     if (!model) {
       alert("PLEASE SELECT A MODEL!");
@@ -35,7 +39,13 @@ const App = () => {
       (value) => value.trim() !== ""
     );
     if (!valuesFilled) {
-      alert("PLEASE INPUT ALL VALUES");
+      alert("PLEASE INPUT ALL VALUES!");
+      return;
+    }
+
+    const allNumeric = Object.values(inputValues).every(isNumeric);
+    if (!allNumeric) {
+      alert("ONLY NUMERICAL VALUES ARE ALLOWED!");
       return;
     }
 
